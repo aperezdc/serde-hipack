@@ -8,6 +8,7 @@ use std::result;
 use std::error;
 use std::fmt;
 use std::io;
+use std::string::FromUtf8Error;
 
 
 #[derive(Clone, PartialEq)]
@@ -31,6 +32,7 @@ impl fmt::Debug for ErrorCode {
 #[derive(Debug)]
 pub enum Error {
     SyntaxError(ErrorCode, usize, usize, usize), // Error, offset, line, column
+    FromUtf8Error(FromUtf8Error),
     IoError(io::Error),
 }
 
@@ -39,6 +41,7 @@ impl error::Error for Error {
     fn description(&self) -> &str {
         match *self {
             Error::SyntaxError(..) => "syntax error",
+            Error::FromUtf8Error(ref error) => error.description(),
             Error::IoError(ref error) => error::Error::description(error),
         }
     }
@@ -46,6 +49,7 @@ impl error::Error for Error {
     fn cause(&self) -> Option<&error::Error> {
         match *self {
             Error::SyntaxError(..) => None,
+            Error::FromUtf8Error(ref error) => Some(error),
             Error::IoError(ref error) => Some(error),
         }
     }
@@ -58,6 +62,7 @@ impl fmt::Display for Error {
             Error::SyntaxError(ref code, _, line, column) => {
                 write!(f, "{:?} at line {} column {}", code, line, column)
             },
+            Error::FromUtf8Error(ref error) => fmt::Display::fmt(error, f),
             Error::IoError(ref error) => fmt::Display::fmt(error, f),
         }
     }
@@ -67,6 +72,13 @@ impl fmt::Display for Error {
 impl From<io::Error> for Error {
     fn from(error: io::Error) -> Error {
         Error::IoError(error)
+    }
+}
+
+
+impl From<FromUtf8Error> for Error {
+    fn from(error: FromUtf8Error) -> Error {
+        Error::FromUtf8Error(error)
     }
 }
 

@@ -334,6 +334,24 @@ pub fn to_vec_pretty<T>(value: &T) -> Result<Vec<u8>>
     Ok(writer)
 }
 
+#[inline]
+pub fn to_string<T>(value: &T) -> Result<String>
+    where T: Serialize
+{
+    let vec = try!(to_vec(value));
+    let string = try!(String::from_utf8(vec));
+    Ok(string)
+}
+
+#[inline]
+pub fn to_string_pretty<T>(value: &T) -> Result<String>
+    where T: Serialize
+{
+    let vec = try!(to_vec_pretty(value));
+    let string = try!(String::from_utf8(vec));
+    Ok(string)
+}
+
 
 #[cfg(test)]
 mod tests {
@@ -343,17 +361,15 @@ mod tests {
 
     #[test]
     fn test_empty_object() {
-        let obj : HashMap<String, i32> = HashMap::new();
-        let enc = String::from_utf8(to_vec(&obj).unwrap()).unwrap();
-        assert_eq!("{}", enc);
+        let obj: HashMap<String, i32> = HashMap::new();
+        assert_eq!("{}", to_string(&obj).unwrap());
     }
 
     #[test]
     fn test_one_item_object() {
         let mut obj = HashMap::new();
         obj.insert("k", "v");
-        let enc = String::from_utf8(to_vec(&obj).unwrap()).unwrap();
-        assert_eq!("{k:\"v\"}", enc);
+        assert_eq!("{k:\"v\"}", to_string(&obj).unwrap());
     }
 
     #[test]
@@ -361,8 +377,7 @@ mod tests {
         let mut obj = BTreeMap::new();
         obj.insert("pi", 3.14);
         obj.insert("phi", 1.67);
-        let enc = String::from_utf8(to_vec(&obj).unwrap()).unwrap();
-        assert_eq!("{phi:1.67,pi:3.14}", enc);
+        assert_eq!("{phi:1.67,pi:3.14}", to_string(&obj).unwrap());
     }
 
     macro_rules! make_write_test {
@@ -372,13 +387,11 @@ mod tests {
                 let value = $value;
                 {
                     println!("Pretty");
-                    let enc = String::from_utf8(to_vec_pretty(&value).unwrap()).unwrap();
-                    assert_eq!($pretty, enc);
+                    assert_eq!($pretty, to_string_pretty(&value).unwrap());
                 }
                 {
                     println!("Compact");
-                    let enc = String::from_utf8(to_vec(&value).unwrap()).unwrap();
-                    assert_eq!($compact, enc);
+                    assert_eq!($compact, to_string(&value).unwrap());
                 }
             }
         }
